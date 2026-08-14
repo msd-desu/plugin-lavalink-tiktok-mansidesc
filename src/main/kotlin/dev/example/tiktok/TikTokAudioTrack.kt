@@ -41,7 +41,9 @@ class TikTokAudioTrack(
 
     override fun process(executor: LocalAudioTrackExecutor) {
         // Re-resolve right before playback to get a non-expired CDN url.
-        val resolved = manager.apiClient.resolveByUrl(info.uri)
+        // Goes through the same direct-scrape-first, tikwm-fallback chain
+        // as the initial lookup.
+        val resolved = manager.resolveTrack(info.uri)
             ?: throw RuntimeException("TikTok video is no longer available: ${info.uri}")
 
         log.info("Resolved TikTok stream for '{}': {}", info.uri, resolved.streamUrl)

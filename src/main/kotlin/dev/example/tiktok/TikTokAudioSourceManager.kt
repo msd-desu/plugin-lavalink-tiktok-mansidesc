@@ -7,9 +7,11 @@ import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist
+import dev.example.tiktok.api.DirectTikTokResolver
 import dev.example.tiktok.api.TikTokApiClient
 import dev.example.tiktok.api.TikTokTrackInfo
 import okhttp3.OkHttpClient
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.io.DataInput
 import java.io.DataOutput
@@ -27,16 +29,28 @@ import java.util.concurrent.TimeUnit
 @Service
 class TikTokAudioSourceManager : AudioSourceManager {
 
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .build()
-
-    val apiClient = TikTokApiClient(httpClient)
-
     companion object {
         const val SEARCH_PREFIX = "tiktoksearch:"
+        private val log = LoggerFactory.getLogger(TikTokAudioSourceManager::class.java)
     }
+
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        // Force HTTP/1.1: we saw sporadic Http2Stream timeout errors talking
+        // to tikwm — some reverse proxies handle long-lived HTTP/2 streams
+        // poorly. HTTP/1.1 is a bit less efficient but far more predictable
+        // for this kind of short-lived request/response API call.
+        .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+        .build()
+
+    // Primary: scrape TikTok's own page directly, no third party involved.
+    private val directResolver = DirectTikTokResolver(httpClient)
+
+    // Fallback: tikwm.com. Also the only source of `tiktoksearch:` results
+    // for now, since search requires TikTok's own signed internal API,
+    // which direct-page scraping doesn't give us access to.
+    val apiClient = TikTokApiClient(httpClient)
 
     override fun getSourceName(): String = "tiktok"
 
@@ -54,8 +68,25 @@ class TikTokAudioSourceManager : AudioSourceManager {
         }
     }
 
+    /**
+     * Tries the direct page scrape first; only falls back to tikwm if that
+     * didn't work (page structure changed, TikTok blocked the request, the
+     * video needs the fallback for some other reason, etc). Used both for
+     * the initial `loadItem` lookup and for [TikTokAudioTrack]'s re-resolve
+     * right before playback.
+     */
+    fun resolveTrack(url: String): TikTokTrackInfo? {
+        directResolver.resolveByUrl(url)?.let {
+            log.debug("Resolved '{}' via direct TikTok page scrape", url)
+            return it
+        }
+
+        log.debug("Direct resolve failed for '{}', falling back to tikwm", url)
+        return apiClient.resolveByUrl(url)
+    }
+
     private fun loadUrl(url: String): AudioItem? {
-        val info = apiClient.resolveByUrl(url) ?: return null
+        val info = resolveTrack(url) ?: return null
         return buildTrack(info)
     }
 
