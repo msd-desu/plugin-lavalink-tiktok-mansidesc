@@ -1,0 +1,13 @@
+lavalink:
+  server:
+    password: "youshallnotpass"
+  plugins:
+    # Once you've built the jar, either:
+    # 1) drop build/libs/tiktok-lavalink-plugin-1.0.0.jar into ./plugins next to Lavalink.jar
+    # 2) or publish it somewhere (jitpack/github releases) and reference it here:
+    - dependency: "dev.example.tiktok:tiktok-lavalink-plugin:1.0.0"
+      repository: "https://jitpack.io"
+
+server:
+  port: 2333
+  address: 0.0.0.0
