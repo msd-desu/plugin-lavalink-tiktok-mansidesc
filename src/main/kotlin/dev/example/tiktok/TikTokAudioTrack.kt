@@ -17,7 +17,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
  */
 class TikTokAudioTrack(
     info: AudioTrackInfo,
-    val sourceManager: TikTokAudioSourceManager
+    private val manager: TikTokAudioSourceManager
 ) : DelegatedAudioTrack(info) {
 
     // Kept alive purely so lavaplayer doesn't garbage collect / close it early.
@@ -25,7 +25,7 @@ class TikTokAudioTrack(
 
     override fun process(executor: LocalAudioTrackExecutor) {
         // Re-resolve right before playback to get a non-expired CDN url.
-        val resolved = sourceManager.apiClient.resolveByUrl(info.uri)
+        val resolved = manager.apiClient.resolveByUrl(info.uri)
             ?: throw RuntimeException("TikTok video is no longer available: ${info.uri}")
 
         // Delegate the actual downloading/decoding to lavaplayer's generic
@@ -44,7 +44,7 @@ class TikTokAudioTrack(
         processDelegate(delegateTrack, executor)
     }
 
-    override fun makeShallowClone(): AudioTrack = TikTokAudioTrack(trackInfo, sourceManager)
+    override fun makeShallowClone(): AudioTrack = TikTokAudioTrack(trackInfo, manager)
 
-    override fun getSourceManager(): TikTokAudioSourceManager = sourceManager
+    override fun getSourceManager(): TikTokAudioSourceManager = manager
 }
