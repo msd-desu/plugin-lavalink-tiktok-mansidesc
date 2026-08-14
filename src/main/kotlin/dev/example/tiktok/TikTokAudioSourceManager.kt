@@ -2,8 +2,6 @@ package dev.example.tiktok
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.io.DataInput
-import com.sedmelluq.discord.lavaplayer.tools.io.DataOutput
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
@@ -13,6 +11,8 @@ import dev.example.tiktok.api.TikTokApiClient
 import dev.example.tiktok.api.TikTokTrackInfo
 import okhttp3.OkHttpClient
 import org.springframework.stereotype.Service
+import java.io.DataInput
+import java.io.DataOutput
 import java.util.concurrent.TimeUnit
 
 /**
