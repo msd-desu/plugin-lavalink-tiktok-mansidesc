@@ -15,12 +15,20 @@ repositories {
 
 // This block wires your jar up so Lavalink can discover + load it as a plugin.
 lavalinkPlugin {
-    apiVersion = "4.0.0"
+    apiVersion = "4.2.1"
     // serverVersion = "4.2.0" // uncomment + pin if you want to test against a specific Lavalink release
 }
 
 dependencies {
-    compileOnly("dev.arbjerg.lavalink:plugin-api:4.0.0")
+    compileOnly("dev.arbjerg.lavalink:plugin-api:4.2.1")
+
+    // plugin-api pulls this in transitively at runtime, but we need it
+    // explicitly on the *compile* classpath so the lavaplayer classes
+    // (DataInput, DelegatingAudioTrack, etc.) actually resolve while
+    // compiling our Kotlin sources. compileOnly because the Lavalink server
+    // itself already provides this at runtime — we don't want to bundle a
+    // second copy into our plugin jar.
+    compileOnly("dev.arbjerg:lavaplayer:2.2.6")
 
     // JSON parsing for the TikTok/tikwm API responses
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0")
