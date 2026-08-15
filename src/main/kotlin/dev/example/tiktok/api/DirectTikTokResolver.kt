@@ -106,16 +106,8 @@ class DirectTikTokResolver(private val httpClient: OkHttpClient) : TikTokResolve
     private fun buildFromItemStruct(item: JsonNode): TikTokTrackInfo? {
         if (item.isMissingNode) return null
 
-        log.info(
-            "itemStruct top-level fields: {}",
-            item.fieldNames().asSequence().toList()
-        )
-        log.info("itemStruct raw (truncated): {}", item.toString().take(800))
-
         val id = item.path("id").asText(null) ?: return null
-        val title = item.path("desc").asText("TikTok video").let {
-            if (it.isBlank()) "TikTok video" else it
-        }
+        val title = TitleSanitizer.sanitize(item.path("desc").asText(null))
         val author = item.path("author").let { a ->
             a.path("nickname").asText(null) ?: a.path("uniqueId").asText("Unknown")
         }
@@ -134,11 +126,7 @@ class DirectTikTokResolver(private val httpClient: OkHttpClient) : TikTokResolve
         val streamUrl = musicUrl ?: playUrl ?: return null
         val isAudioOnly = musicUrl != null
 
-        log.info(
-            "Direct-parsed fields — id={} title='{}' author='{}' durationSeconds={} " +
-                "cover={} audioOnly={}",
-            id, title, author, durationSeconds, coverUrl, isAudioOnly
-        )
+        log.debug("Direct-parsed: id={} title='{}' author='{}'", id, title, author)
 
         return TikTokTrackInfo(
             identifier = id,

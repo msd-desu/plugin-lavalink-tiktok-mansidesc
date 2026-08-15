@@ -114,9 +114,7 @@ class TikTokApiClient(private val httpClient: OkHttpClient) : TikTokResolver {
         if (node.isMissingNode) return null
 
         val id = node.path("id").asText(null) ?: return null
-        val title = node.path("title").asText("TikTok video").let {
-            if (it.isBlank()) "TikTok video" else it
-        }
+        val title = TitleSanitizer.sanitize(node.path("title").asText(null))
         val author = node.path("author").path("nickname").asText(
             node.path("author").path("unique_id").asText("Unknown")
         )
